@@ -1,0 +1,15 @@
+Release notes
+
+0.1.NEXT
+- GUI maybe
+- Add watermark, maybe
+
+
+Fix NOW
+- fileInfo with encrypted vs non encrypted files, might need different ctx calls
+- permissions
+
+
+
+0.1.0
+- initial checkin

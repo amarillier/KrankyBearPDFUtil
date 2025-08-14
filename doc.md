@@ -1,0 +1,15 @@
+main.go:func decryptFile(inFile string, userPw string, ownerPw string, keyLength int)
+main.go:func encryptFile(inFile string, userPw string, ownerPw string, keyLength int)
+main.go:func extractPages(inFile string, outDir string, pageNumbers []string)
+main.go:func fileInfo(inFile string, userPass string, ownerPass string, encryptionBits int)
+main.go:func insertPDFBetweenPages(inFile string, insertFile string, outFile string, insertAfterPage int)
+main.go:func mergePDFs(inFiles []string, outFile string)
+main.go:func rotatePages(inFile string, outFile string, pages []string, rotation int)
+main.go:func reversePages(inFile string, outFile string, setContext bool)
+main.go:func setPermissions(inFile string, outFile string, userPass string, ownerPass string, encryptBits int)
+main.go:func splitPDF(inFile string, outDir string)
+main.go:func main()
+util.go:func makeTempDir() string
+util.go:func readFilesInDir(dirPath string) ([]string, error)
+util.go:func updateChecker(repoOwner string, repo string, repoName string, repodl string) (string, bool)
+util.go:func zeroPadNames(dir string, pad int) error

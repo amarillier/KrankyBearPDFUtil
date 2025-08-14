@@ -1,0 +1,14 @@
+This application is "FREE Software". 
+
+This application is intended for any use by any individual, in any organization.
+
+This application provides no guarantees as to stability of operations or suitability 
+for any purpose, but every attempt has been made to make this application reliable.
+
+This application may not be sold, no money may be asked by anyone for provision of, or any services related to this application.
+
+Using this application (and reading this text) is considered acceptance of
+the terms of the License Agreement, and acknowledgement that this is FREE
+Software and the additional terms above.
+
+See https://github.com/amarillier/pdfutil/
