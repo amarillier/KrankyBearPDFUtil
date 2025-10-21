@@ -3,22 +3,25 @@
 
 hello:
 	echo "Hello KrankyBear!"
-	echo "make fmt to format the code"
-	echo "make lint to run golint"
-	echo "make vet to vet the code"
-	echo "make run to run the main.go"
-	echo "make build to build for the current system"
-	echo "make buildsupported to build for the currently supported systems - MacAMD, MacARM and WinAMD"
-	# echo "	make linuxamd64"
-	# echo "	make linuxarm64"
-	echo "	make macamd64"
-	echo "	make macarm64"
-	echo "	make winamd64"
-	echo "	make winarm64"
-	echo "	make all"
-	echo "make clean to remove compiled files from bin/*"
-	echo "make doc to generate some docs based on func names"
-	echo "  grepped | tee doc.md, on display and in file"
+	echo ""
+	echo "Common targets:"
+	echo "  make all             - Build for all platforms (Win, Linux, macOS Intel & ARM) to bin/"
+	echo "  make build           - Build for the current system"
+	echo "  make clean           - Remove compiled files from bin/*"
+	echo ""
+	echo "Development:"
+	echo "  make fmt             - Format the code"
+	echo "  make lint            - Run golint"
+	echo "  make vet             - Vet the code"
+	echo "  make tidy            - Tidy and vendor dependencies"
+	echo "  make run             - Run the main.go"
+	echo "  make doc             - Generate docs based on func names"
+	echo ""
+	echo "Platform-specific targets:"
+	echo "  make macamd64        - Build macOS Intel (with installer)"
+	echo "  make macarm64        - Build macOS ARM (with installer)"
+	echo "  make winamd64        - Build Windows AMD64 (with installer)"
+	echo "  make buildsupported  - Build for all supported systems with installers"
 .PHONY:hello
 
 fmt:
@@ -94,6 +97,24 @@ winarm64:
 .PHONY:winarm64
 
 
+all:
+	@echo "Building KrankyBear PDFUtil for all platforms..."
+	@echo ""
+	@mkdir -p bin
+	@echo "Building for Windows (amd64)..."
+	GOOS=windows GOARCH=amd64 go build -ldflags="-w -s" -o bin/pdfutil-windows-amd64.exe
+	@echo "Building for Linux (amd64)..."
+	GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o bin/pdfutil-linux-amd64
+	@echo "Building for macOS Intel (amd64)..."
+	GOOS=darwin GOARCH=amd64 go build -ldflags="-w -s" -o bin/pdfutil-darwin-amd64
+	@echo "Building for macOS Apple Silicon (arm64)..."
+	GOOS=darwin GOARCH=arm64 go build -ldflags="-w -s" -o bin/pdfutil-darwin-arm64
+	@echo ""
+	@echo "Build complete! Binaries are in the 'bin/' directory:"
+	@ls -lh bin/
+	@cp bin/pdfutil-darwin-arm64 ./pdfutil
+.PHONY:all
+
 buildall: linuxamd64 linuxarm64 macamd64 macarm64 winamd64 winarm64
 .PHONY:buildall
 
@@ -106,9 +127,11 @@ dmg:
 .PHONY:dmg
 
 clean:
-	rm bin/*/*
-	rm installers/*.dmg
-	rm installers/*.exe
+	@echo "Cleaning build artifacts..."
+	rm -f bin/*
+	rm -f installers/*.dmg
+	rm -f installers/*.exe
+	@echo "Clean complete!"
 .PHONY:clean
 
 doc:

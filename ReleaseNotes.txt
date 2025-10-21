@@ -1,15 +1,21 @@
 Release notes
 
-0.1.NEXT
+0.NEXT
 - GUI maybe
-- Add watermark, maybe
+- Watermark, maybe?
 
 
-Fix NOW
-- fileInfo with encrypted vs non encrypted files, might need different ctx calls
-- permissions
+Known issues
+- reverse not reversing with setContext true - but this is handled ok, no need for change
 
-
+0.2.0
+- added remove pages
+- improved permissions listing
+- added permissions set
+- extract allow user / owner passwords to enable extraction when encrypted
+- split allow user / owner passwords to enable extraction when encrypted
+- properties add, list and remove capabilities. Doc properties are simple keyword/text properties in PDF metadata
+- password user|owner change capability, inplace same file, or -out to new file
 
 0.1.0
 - initial checkin

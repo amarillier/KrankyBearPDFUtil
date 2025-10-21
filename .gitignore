@@ -5,8 +5,11 @@
 authorized_keys*
 IAM*
 *.pdf
+pdfcpu
+pdfutil
 .DS_Store/*
 .vscode
+git.txt
 original/*
 sensors/*.ps1
 sensors/*.py
@@ -14,9 +17,9 @@ sensors/*.sh
 templates/*
 test/*
 tst/*
-bin/*
-installers/*
 UNUSED/*
+outdir/*
+test/*
 ResourcesUnused/*
 Resources/*.txt
 Resources/*/notUsed
@@ -24,6 +27,8 @@ ResourcesUnused
 latestcheck.json
 
 # Distribution / packaging
+installers/*
+!bin/*
 *.zip
 *.exe
 *.dmg

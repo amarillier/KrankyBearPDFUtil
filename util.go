@@ -95,16 +95,15 @@ func zeroPadNames(dir string, pad int) error {
 				return err
 			}
 
-			paddedNum := fmt.Sprintf("%0*d", pad, num)
 			// Create the new name with padded number
 			// e.g., if num is 1 and pad is 4, paddedNum will be "0001"
-			newName := fmt.Sprintf("file_%s.pdf", paddedNum)
-			// newName := fmt.Sprintf("file_%03d.pdf", num)
+			paddedNum := fmt.Sprintf("%0*d", pad, num)
+			re := regexp.MustCompile(`_.*\.pdf$`)
+			newName := re.ReplaceAllString(name, fmt.Sprintf("_%s.pdf", paddedNum))
 			oldPath := filepath.Join(dir, name)
 			newPath := filepath.Join(dir, newName)
 
 			if oldPath != newPath {
-				// fmt.Printf("Renaming %s → %s\n", name, newName)
 				return os.Rename(oldPath, newPath)
 			}
 		}
