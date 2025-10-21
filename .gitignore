@@ -27,8 +27,7 @@ ResourcesUnused
 latestcheck.json
 
 # Distribution / packaging
-installers/*
-!bin/*
+#installers/*
 *.zip
 *.exe
 *.dmg
@@ -45,3 +44,4 @@ vendor/*
 !MicrosoftDefender.zip
 !packages/7z*
 !installers/*
+!bin/*
