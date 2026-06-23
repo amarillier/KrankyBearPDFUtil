@@ -13,6 +13,11 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 )
 
+// baseRenderDPI is the rendering DPI at 100% zoom; the effective DPI scales with the
+// zoom factor. The viewer divides the resulting pixel size by (baseRenderDPI/72) so that
+// 100% displays at a natural ~72-DPI page size while higher zoom levels show more pixels.
+const baseRenderDPI = 150.0
+
 // PDFRenderer handles PDF page rendering using pdfcpu
 type PDFRenderer struct {
 	pdfPath   string
@@ -131,11 +136,9 @@ func (r *PDFRenderer) renderPageToPNG(pdfPath string, pageNum int, zoom float32)
 		return nil, fmt.Errorf("page %d out of range (1-%d)", pageNum, totalPages)
 	}
 
-	// Calculate DPI based on zoom level
-	// Base DPI is 150, scaled by zoom factor
-	baseDPI := 150.0
-	dpi := baseDPI * float64(zoom)
-	
+	// Calculate DPI based on zoom level (base DPI scaled by the zoom factor)
+	dpi := baseRenderDPI * float64(zoom)
+
 	// Clamp DPI to reasonable values (min 50, max 600)
 	if dpi < 50 {
 		dpi = 50

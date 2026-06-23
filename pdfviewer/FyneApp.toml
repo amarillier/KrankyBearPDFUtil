@@ -1,5 +1,5 @@
 [Details]
-  Icon = "Resources/Images/KrankyBearBeanieMultiColor.png"
+  Icon = "assets/images/KrankyBearBeanieMultiColor.png"
   Name = "KrankyBear PDF Viewer"
   ID = "com.krankybear.pdfviewer"
   Version = "1.0.0"

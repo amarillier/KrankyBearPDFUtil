@@ -30,6 +30,7 @@ type PDFViewer struct {
 	renderer      *PDFRenderer
 	currentImage  *canvas.Image
 	imageScroll   *container.Scroll
+	viewport      *fyne.Container
 	
 	// UI components
 	pageEntry     *widget.Entry
@@ -45,6 +46,31 @@ type PDFViewer struct {
 	mu              sync.RWMutex
 	lastDir         string
 	showBookmarks   bool
+}
+
+// fitWatcher is a passthrough layout that fills its single child (the scroll) and reports
+// the available width whenever it changes — used to re-fit the page live on window resize.
+type fitWatcher struct {
+	onWidth func(float32)
+	lastW   float32
+}
+
+func (f *fitWatcher) MinSize(objs []fyne.CanvasObject) fyne.Size {
+	if len(objs) > 0 {
+		return objs[0].MinSize()
+	}
+	return fyne.NewSize(0, 0)
+}
+
+func (f *fitWatcher) Layout(objs []fyne.CanvasObject, size fyne.Size) {
+	for _, o := range objs {
+		o.Resize(size)
+		o.Move(fyne.NewPos(0, 0))
+	}
+	if f.onWidth != nil && size.Width != f.lastW {
+		f.lastW = size.Width
+		f.onWidth(size.Width)
+	}
 }
 
 // NewPDFViewer creates a new PDF viewer instance
@@ -74,27 +100,30 @@ func (v *PDFViewer) Build() *fyne.Container {
 	
 	v.imageScroll = container.NewScroll(v.currentImage)
 	v.imageScroll.SetMinSize(fyne.NewSize(600, 600))
-	
+
+	// Wrap the scroll in a width-watching layout so "Fit Width" re-fits live on resize.
+	v.viewport = container.New(&fitWatcher{onWidth: v.onViewportWidth}, v.imageScroll)
+
 	// Create status bar
 	v.statusBar = widget.NewLabel("Open a PDF to begin viewing")
 	v.statusBar.Alignment = fyne.TextAlignCenter
-	
+
 	// Create bookmark panel
 	v.bookmarkPanel = NewBookmarkPanel(v)
-	
+
 	// Setup tree selection callback
 	v.bookmarkPanel.tree.OnSelected = func(uid string) {
 		selectedBookmarkUID = uid
 		v.bookmarkPanel.OnBookmarkSelected(uid)
 	}
-	
+
 	// PDF viewer content
 	pdfContent := container.NewBorder(
 		v.toolbar,    // top
 		v.statusBar,  // bottom
 		nil,          // left
 		nil,          // right
-		v.imageScroll, // center
+		v.viewport,   // center
 	)
 	
 	// Create split view with bookmarks (initially hidden)
@@ -366,33 +395,77 @@ func (v *PDFViewer) renderCurrentPage() error {
 		return fmt.Errorf("no PDF loaded")
 	}
 	
-	// Calculate effective zoom
+	// Fit Width (zoomLevel == -1) renders at 100% and is scaled to the viewport below.
+	fitWidth := v.zoomLevel == -1.0
 	effectiveZoom := v.zoomLevel
-	if effectiveZoom == -1.0 {
-		// Fit to width - use scroll container width
-		effectiveZoom = 1.0 // Will be adjusted by Fyne's ImageFillContain
+	if fitWidth {
+		effectiveZoom = 1.0
 	}
-	
+
 	// Render the page
 	img, err := v.renderer.RenderPage(v.currentPage, effectiveZoom)
 	if err != nil {
 		return fmt.Errorf("failed to render page: %w", err)
 	}
-	
-	// Update the image - use canvas.NewImageFromImage to properly create from image.Image
-	// Clear any existing resource first
+
+	b := img.Bounds()
+	imgW, imgH := float32(b.Dx()), float32(b.Dy())
+	if imgW < 1 || imgH < 1 {
+		return fmt.Errorf("rendered page has zero size")
+	}
+
+	// Clear any existing resource first, then set the new image
 	v.currentImage.Resource = nil
 	v.currentImage.Image = img
 	v.currentImage.FillMode = canvas.ImageFillContain
-	
+
+	// The display size must scale with the zoom level. The image lives inside a scroll
+	// container, so we drive the displayed size via MinSize (the scroll provides bars when
+	// the page is larger than the viewport). A fixed MinSize was the reason zoom did
+	// nothing and the page always appeared small.
+	if fitWidth {
+		// Scale the page to the width of the scroll viewport; scroll vertically.
+		v.applyFitWidth(v.imageScroll.Size().Width, imgW, imgH)
+	} else {
+		// Render DPI already scales with zoom, so a constant divisor keeps the page
+		// crisp while honouring the selected zoom (100% ≈ natural 72-DPI page size).
+		const displayScale = 72.0 / baseRenderDPI
+		v.currentImage.SetMinSize(fyne.NewSize(imgW*displayScale, imgH*displayScale))
+	}
+
 	// Force refresh of the image and scroll container
 	v.currentImage.Refresh()
 	v.imageScroll.Refresh()
-	
+
 	// Scroll to top
 	v.imageScroll.ScrollToTop()
-	
+
 	return nil
+}
+
+// applyFitWidth sizes the page image to the given viewport width, preserving aspect ratio.
+func (v *PDFViewer) applyFitWidth(vpW, imgW, imgH float32) {
+	if imgW < 1 || imgH < 1 {
+		return
+	}
+	if vpW < 1 {
+		vpW = 600 // before the first layout pass
+	}
+	vpW -= 4 // small margin so the vertical scrollbar doesn't overlap content
+	v.currentImage.SetMinSize(fyne.NewSize(vpW, vpW*imgH/imgW))
+}
+
+// onViewportWidth is called when the viewport width changes (window resize). In Fit Width
+// mode it re-fits the already-rendered page to the new width — no re-render needed, just a
+// rescale, so it stays smooth.
+func (v *PDFViewer) onViewportWidth(w float32) {
+	if v.zoomLevel != -1.0 || v.currentImage == nil || v.currentImage.Image == nil {
+		return
+	}
+	b := v.currentImage.Image.Bounds()
+	v.applyFitWidth(w, float32(b.Dx()), float32(b.Dy()))
+	v.currentImage.Refresh()
+	v.imageScroll.Refresh()
 }
 
 // ToggleBookmarks shows or hides the bookmark panel

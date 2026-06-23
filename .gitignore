@@ -29,16 +29,14 @@ latestcheck.json
 
 ## Build artifacts
 bin/*
-bin-gui/*
-!bin/Readme.txt
 build/*
+pdfutil
 # Ignore all files in the data directory
 data/*
 docs/*
 dist/
 installers/
 KrankyBearPDF.app/
-Resources/
 test/
 outdir/
 vendor/*

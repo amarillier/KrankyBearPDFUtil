@@ -1,24 +1,19 @@
-Version 0.3.0 - 2025-12-27
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Version 0.2.0 - 2025-10-21
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Version 0.1.0 - 2025-08-14
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Release notes
-
-0.NEXT
+═══════════════════════════════════════════════════════════════════════════════
+KrankyBear PDFUtil - RELEASE NOTES
+═══════════════════════════════════════════════════════════════════════════════
+Future ideas:
 - Watermark, maybe?
-
 
 Known issues
 - reverse not reversing with setContext true - but this is handled ok, no need for change
 
-0.3.0
-- major update with GUI addition
+Version 0.3.0 - June 28, 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- major update with pdfgui addition
+- pdfviewer - standalone but launchable via pdfgui, or select system default pdfviewer. pdfviewer is a bare bones, nothing but display, zoom, page forward / back / end / beginning of doc viewer
 
+Version 0.2.0 - October 21, 2025
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 0.2.0
 - added remove pages
 - improved permissions listing
@@ -28,5 +23,8 @@ Known issues
 - properties add, list and remove capabilities. Doc properties are simple keyword/text properties in PDF metadata
 - password user|owner change capability, inplace same file, or -out to new file
 
+Version 0.1.0 - August 14, 2025
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 0.1.0
 - initial checkin
+

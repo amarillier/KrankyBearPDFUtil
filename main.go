@@ -809,6 +809,11 @@ func main() {
 			flag.Usage()
 			os.Exit(0)
 		}
+	case "version", "ver", "-v", "--v", "-version", "--version":
+		{
+			fmt.Println(appName, "version", appVersion, "-", appCopyright)
+			os.Exit(0)
+		}
 	case "checkupdate", "cu", "chk", "c":
 		{
 			// Check for updates and exit

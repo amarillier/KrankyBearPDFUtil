@@ -4,15 +4,15 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>KrankyBearTailer</string>
+	<string>KrankyBearPDF</string>
 	<key>CFBundleExecutable</key>
-	<string>KrankyBearTailer</string>
+	<string>KrankyBearPDF</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.github.amarillier.KrankyBearTailer</string>
+	<string>com.krankybear.pdf</string>
 	<key>CFBundleIconFile</key>
 	<string>icon.icns</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.0</string>
+	<string>0.3.0</string>
 	<key>CFBundleSupportedPlatforms</key>
 	<array>
 		<string>MacOSX</string>
