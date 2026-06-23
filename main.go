@@ -21,7 +21,7 @@ import (
 
 const (
 	appName    = "Kranky Bear pdfutil"
-	appVersion = "0.1.0" // see FyneApp.toml
+	appVersion = "0.3.0" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 
@@ -103,7 +103,9 @@ func fileInfo(inFile string, userPass string, ownerPass string, encryptionBits i
 		}
 		defer f.Close()
 
-		ctx, err = api.ReadContext(f, conf)
+		// Use ReadAndValidate instead of ReadContext to ensure metadata is populated
+		// Validation parses the Info dictionary and populates Title, Author, etc.
+		ctx, err = api.ReadAndValidate(f, conf)
 		if err != nil {
 			fmt.Println("The file appears to be encrypted, enter a user or owner password")
 			return
@@ -569,7 +571,9 @@ func listProperties(inFile string, userPass string, ownerPass string) error {
 		}
 		defer f.Close()
 
-		ctx, err = api.ReadContext(f, conf)
+		// Use ReadAndValidate instead of ReadContext to ensure metadata is populated
+		// Validation parses the Info dictionary and populates Title, Author, etc.
+		ctx, err = api.ReadAndValidate(f, conf)
 		if err != nil {
 			return fmt.Errorf("error reading encrypted PDF context: %v", err)
 		}
@@ -746,6 +750,15 @@ func changeOwnerPassword(inFile string, outFile string, oldPassword string, newP
 func main() {
 
 	if len(os.Args) <= 1 {
+		fmt.Println(appName)
+		fmt.Printf("Version: %s\n", appVersion)
+		fmt.Println(appCopyright)
+		fmt.Println()
+		fmt.Println("A simple PDF management utility for encryption, decryption, page manipulation,")
+		fmt.Println("permissions management, document properties, and more.")
+		fmt.Println()
+		fmt.Println("For detailed usage information, run: pdfutil --help")
+		fmt.Println()
 		fmt.Println("Expected [checkupdate | changepassword | decrypt | encrypt | extract | fileinfo | insert | join | merge | permissions | properties | setperms | remove | reverse | rotate | split] action as first parameter")
 		os.Exit(1)
 	}
@@ -1079,7 +1092,7 @@ func main() {
 		extractCmd.StringVar(userPass, "userpass", "", "User password (alias for -up)")
 		extractCmd.StringVar(userPass, "u", "", "User password (alias for -up)")
 		extractCmd.StringVar(ownerPass, "ownerpass", "", "Owner password (alias for -op)")
-		extractCmd.StringVar(ownerPass, "o", "", "Owner password (alias for -op)")
+		// Note: "o" is used for output directory, not owner password, to avoid conflict
 		extractCmd.Parse(os.Args[2:])
 
 		if len(os.Args) <= 3 {
@@ -1219,7 +1232,7 @@ func main() {
 		insertCmd.StringVar(userPass, "userpass", "", "User password (alias for -up)")
 		insertCmd.StringVar(userPass, "u", "", "User password (alias for -up)")
 		insertCmd.StringVar(ownerPass, "ownerpass", "", "Owner password (alias for -op)")
-		insertCmd.StringVar(ownerPass, "o", "", "Owner password (alias for -op)")
+		// Note: "o" is used for output file, not owner password, to avoid conflict
 		insertCmd.Parse(os.Args[2:])
 
 		if len(os.Args) <= 3 {
@@ -1885,7 +1898,7 @@ func main() {
 		reverseCmd.StringVar(userPass, "userpass", "", "User password (alias for -up)")
 		reverseCmd.StringVar(userPass, "u", "", "User password (alias for -up)")
 		reverseCmd.StringVar(ownerPass, "ownerpass", "", "Owner password (alias for -op)")
-		reverseCmd.StringVar(ownerPass, "o", "", "Owner password (alias for -op)")
+		// Note: "o" is used for output file, not owner password, to avoid conflict
 
 		reverseCmd.Parse(os.Args[2:])
 
@@ -1947,7 +1960,7 @@ func main() {
 		splitCmd.StringVar(userPass, "userpass", "", "User password (alias for -up)")
 		splitCmd.StringVar(userPass, "u", "", "User password (alias for -up)")
 		splitCmd.StringVar(ownerPass, "ownerpass", "", "Owner password (alias for -op)")
-		splitCmd.StringVar(ownerPass, "o", "", "Owner password (alias for -op)")
+		// Note: "o" is used for output directory, not owner password, to avoid conflict
 		splitCmd.BoolVar(pad, "z", false, "Zero pad output file names (alias for -pad)")
 		splitCmd.BoolVar(pad, "zeropad", false, "Zero pad output file names (alias for -pad)")
 

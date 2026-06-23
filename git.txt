@@ -1,0 +1,27 @@
+
+git init
+
+# git remote add allanm https://github.com/amarillier/KrankyBearPDFUtil
+git add README.md
+git commit -m "first commit"
+git branch -M allanm
+git remote add allanm git@github.com:amarillier/KrankyBearPDFUtil.git
+git push --set-upstream allanm allanm
+git push -u origin allanm
+git remote -v
+
+
+…or create a new repository on the command line
+echo "# KrankyBearPDFUtil" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin git@github.com:amarillier/KrankyBearPDFUtil.git
+git push -u origin main
+
+
+…or push an existing repository from the command line
+git remote add origin git@github.com:amarillier/KrankyBearPDFUtil.git
+git branch -M main
+git push -u origin main

@@ -1,0 +1,16 @@
+[Details]
+  Icon = "KrankyBearBeret.png"
+  Name = "Kranky Bear PDF Utility"
+  Creator = "Allan Marillier"
+  ID = "com.krankybear.pdfutil"
+  Version = "0.3.0"
+  Build = 1
+
+[Migrations]
+  fyneDo = true
+
+[Development]
+  HelperText = "This binary was built with debug symbols"
+
+[Release]
+  HelperText = "This binary was built without debug symbols"

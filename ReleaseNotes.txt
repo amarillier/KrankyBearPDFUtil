@@ -1,12 +1,23 @@
+Version 0.3.0 - 2025-12-27
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Version 0.2.0 - 2025-10-21
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Version 0.1.0 - 2025-08-14
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Release notes
 
 0.NEXT
-- GUI maybe
 - Watermark, maybe?
 
 
 Known issues
 - reverse not reversing with setContext true - but this is handled ok, no need for change
+
+0.3.0
+- major update with GUI addition
 
 0.2.0
 - added remove pages
