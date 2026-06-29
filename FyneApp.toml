@@ -3,7 +3,7 @@
   Name = "Kranky Bear PDF Utility"
   Creator = "Allan Marillier"
   ID = "com.krankybear.pdfutil"
-  Version = "0.3.0"
+  Version = "0.3.1"
   Build = 1
 
 [Migrations]

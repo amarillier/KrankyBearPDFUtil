@@ -1,11 +1,32 @@
+
 ═══════════════════════════════════════════════════════════════════════════════
 KrankyBear PDFUtil - RELEASE NOTES
 ═══════════════════════════════════════════════════════════════════════════════
 Future ideas:
-- Watermark, maybe?
+-
 
 Known issues
 - reverse not reversing with setContext true - but this is handled ok, no need for change
+
+Version 0.3.1 - 2026-06-29
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- PDFViewer - keyboard nav: PgDn / → next page, PgUp / ← previous, Home / End first/last; navigating now opens the new page at the top
+- PDFViewer - bookmarks: distinct icons (📖 table of contents, 🔖 page, 📍 region), region positions are zoom-independent, panel sorted by page
+- PDFViewer - Save to PDF fixed (writes a standard PDF outline, readable by Preview/Acrobat/Foxit)
+- PDFViewer - View menu: Table of Contents / Bookmarks / Hide Panel, remembered across launches
+- PDFViewer - drag & drop a PDF onto the window to open it
+- PDFViewer - zoom now scales the page; Fit Width re-fits live on window resize
+- PDFViewer - continuous scroll mode (toolbar "Continuous"): lazily renders pages in/near view; choice remembered across launches
+- PDFViewer - shortcuts: Cmd/Ctrl+D add bookmark, Cmd/Ctrl+T add TOC entry
+- PDFViewer - File ▸ Open Recent… (last 10 files, with Clear Recent List)
+- PDFViewer - add TOC entries (📖) vs bookmarks (🔖/📍): in-panel switch + context-aware Add button; bookmarks carry a marker so they reload as bookmarks after Save (no sidecar)
+- PDFViewer - Save to PDF: choose new file or overwrite original; saving with no entries strips the outline (cleanup); Delete All (per view)
+- PDFViewer - confirmations auto-dismiss after 2s; add/TOC dialog focuses the title field
+- PDFViewer - Delete Selected (orange) vs Delete All (red)
+- PDFViewer - window icon + system tray menu (Show/Hide, Open, About/Help, theme, Quit), matching pdfgui; all quit paths fully exit (no lingering tray)
+- PDFViewer - remembers window size and last zoom level across launches
+- PDFViewer - Fit Page zoom (whole page in view); Fit Width/Page re-fit live on resize
+- Upgraded Fyne to v2.7.4 (pdfgui + pdfviewer); bumped golang.org/x/* deps
 
 Version 0.3.0 - June 28, 2026
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

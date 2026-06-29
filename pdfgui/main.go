@@ -13,7 +13,7 @@ import (
 
 const (
 	appName    = "Kranky Bear PDF Utility"
-	appVersion = "0.3.0"
+	appVersion = "0.3.1"
 	appAuthor  = "Allan Marillier"
 	appID      = "com.krankybear.pdfutil"
 )

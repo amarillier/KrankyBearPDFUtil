@@ -21,7 +21,7 @@ import (
 
 const (
 	appName    = "Kranky Bear pdfutil"
-	appVersion = "0.3.0" // see FyneApp.toml
+	appVersion = "0.3.1" // see FyneApp.toml
 	appAuthor  = "Allan Marillier"
 )
 

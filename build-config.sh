@@ -31,7 +31,7 @@ export KB_VIEWER_DIR="pdfviewer"
 # App icon (PNG). winres embeds it on Windows; setIcon.sh stamps mac binaries/pkg.
 export KB_ICON="assets/images/KrankyBearBeanieMultiColor.png"
 
-export KB_VERSION_DEFAULT="0.3.0"
+export KB_VERSION_DEFAULT="0.3.1"
 
 export KB_HOMEPAGE="https://github.com/amarillier/KrankyBearPDF"
 export KB_MAINTAINER_DEFAULT="amarillier@gmail.com"

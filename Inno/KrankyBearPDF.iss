@@ -9,7 +9,7 @@
 
 #define MyAppName "KrankyBearPDF"
 #define MyAppNiceName "KrankyBear PDF"
-#define MyAppVersion "0.3.0"
+#define MyAppVersion "0.3.1"
 #define MyAppPublisher "Allan Marillier, 2025-"
 #define MyAppURL "https://github.com/amarillier/KrankyBearPDF"
 #define MyGuiExe "pdfgui.exe"

@@ -2,7 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -19,7 +21,16 @@ type BookmarkPanel struct {
 	bookmarkManager *BookmarkManager
 	treeData        map[string]*Bookmark
 	rootIDs         []string
+	modeSelect      *widget.Select
+	addBtn          *widget.Button
+	selected        *Bookmark // currently selected entry (stable across tree rebuilds)
 }
+
+// Labels for the in-panel mode switch.
+const (
+	modeLabelTOC       = "📖 Table of Contents"
+	modeLabelBookmarks = "🔖 Bookmarks"
+)
 
 // NewBookmarkPanel creates a new bookmark panel
 func NewBookmarkPanel(viewer *PDFViewer) *BookmarkPanel {
@@ -44,16 +55,22 @@ func (bp *BookmarkPanel) buildUI() {
 		bp.updateItem,
 	)
 
-	// Add bookmark button
-	addBtn := widget.NewButton("Add Bookmark", func() {
-		bp.showAddBookmarkDialog()
+	// Add button — label switches with the mode (Bookmark vs TOC entry).
+	bp.addBtn = widget.NewButton("Add Bookmark", func() {
+		bp.showAddDialog(bp.viewer.panelMode == PanelTOC)
 	})
 
-	// Delete bookmark button
+	// Delete-selected (orange/warning) vs Delete-all (red/danger) to signal severity.
 	deleteBtn := widget.NewButton("Delete Selected", func() {
 		bp.deleteSelectedBookmark()
 	})
-	deleteBtn.Importance = widget.DangerImportance
+	deleteBtn.Importance = widget.WarningImportance
+
+	// Delete-all button — clears every entry in the current view (TOC or Bookmarks).
+	deleteAllBtn := widget.NewButton("Delete All", func() {
+		bp.deleteAll()
+	})
+	deleteAllBtn.Importance = widget.DangerImportance
 
 	// Save bookmarks button
 	saveBtn := widget.NewButton("Save to PDF", func() {
@@ -66,18 +83,57 @@ func (bp *BookmarkPanel) buildUI() {
 	})
 	refreshBtn.Importance = widget.LowImportance
 
+	// In-panel switch between the document's Table of Contents and the user's Bookmarks.
+	// Shows the current mode and lets the user flip without using the menu.
+	bp.modeSelect = widget.NewSelect([]string{modeLabelTOC, modeLabelBookmarks}, func(s string) {
+		if s == modeLabelTOC {
+			bp.viewer.SetPanelMode(PanelTOC)
+		} else {
+			bp.viewer.SetPanelMode(PanelBookmarks)
+		}
+	})
+
 	toolbar := container.NewBorder(
 		nil, nil,
 		nil, refreshBtn,
-		container.NewVBox(addBtn, deleteBtn, saveBtn),
+		container.NewVBox(bp.addBtn, deleteBtn, deleteAllBtn, saveBtn),
 	)
 
-	// Main container
+	// Main container: mode switch + toolbar on top, scrollable tree below.
 	bp.container = container.NewBorder(
-		toolbar,
+		container.NewVBox(bp.modeSelect, toolbar),
 		nil, nil, nil,
 		container.NewScroll(bp.tree),
 	)
+}
+
+// syncModeSelect updates the in-panel switch to reflect the current mode without firing its
+// OnChanged handler (setting .Selected directly + Refresh, rather than SetSelected).
+func (bp *BookmarkPanel) syncModeSelect() {
+	if bp.modeSelect == nil {
+		return
+	}
+	switch bp.viewer.panelMode {
+	case PanelTOC:
+		bp.modeSelect.Selected = modeLabelTOC
+	case PanelBookmarks:
+		bp.modeSelect.Selected = modeLabelBookmarks
+	}
+	bp.modeSelect.Refresh()
+	bp.updateAddButtonLabel()
+}
+
+// updateAddButtonLabel makes the Add button match the active view: it adds a TOC entry in
+// Table-of-Contents mode, or a bookmark otherwise.
+func (bp *BookmarkPanel) updateAddButtonLabel() {
+	if bp.addBtn == nil {
+		return
+	}
+	if bp.viewer.panelMode == PanelTOC {
+		bp.addBtn.SetText("Add TOC Entry")
+	} else {
+		bp.addBtn.SetText("Add Bookmark")
+	}
 }
 
 // Tree functions for Fyne tree widget
@@ -93,7 +149,7 @@ func (bp *BookmarkPanel) childUIDs(uid string) []string {
 
 	childIDs := make([]string, len(bookmark.Children))
 	for i, child := range bookmark.Children {
-		childID := fmt.Sprintf("%s-%d", uid, i)
+		childID := fmt.Sprintf("%p", child) // stable per-entry id (pointer identity)
 		bp.treeData[childID] = child
 		childIDs[i] = childID
 	}
@@ -123,11 +179,17 @@ func (bp *BookmarkPanel) updateItem(uid string, branch bool, item fyne.CanvasObj
 		return
 	}
 
-	// Show region indicator if bookmark has Y offset
-	if bookmark.YOffset > 0 {
+	// Distinct icon per entry type:
+	//   📖 document outline (table of contents)
+	//   📍 user region bookmark (a specific position on the page)
+	//   🔖 user page bookmark (top of page)
+	switch {
+	case !bookmark.IsUserAdded:
+		label.SetText(fmt.Sprintf("📖 %s (p.%d)", bookmark.Title, bookmark.PageNo))
+	case bookmark.YOffset > 0:
 		label.SetText(fmt.Sprintf("📍 %s (p.%d)", bookmark.Title, bookmark.PageNo))
-	} else {
-		label.SetText(fmt.Sprintf("%s (p.%d)", bookmark.Title, bookmark.PageNo))
+	default:
+		label.SetText(fmt.Sprintf("🔖 %s (p.%d)", bookmark.Title, bookmark.PageNo))
 	}
 }
 
@@ -154,65 +216,91 @@ func (bp *BookmarkPanel) rebuildTreeData() {
 	bp.treeData = make(map[string]*Bookmark)
 	bp.rootIDs = make([]string, 0)
 
+	// Display bookmarks in page order (stable, so same-page bookmarks keep add-order).
+	// This matches the order they're written on Save to PDF.
 	bookmarks := bp.bookmarkManager.GetBookmarks()
-	for i, bookmark := range bookmarks {
-		id := fmt.Sprintf("root-%d", i)
+	sorted := make([]*Bookmark, len(bookmarks))
+	copy(sorted, bookmarks)
+	sort.SliceStable(sorted, func(i, j int) bool { return sorted[i].PageNo < sorted[j].PageNo })
+
+	// Filter by the current panel mode: TOC shows the document outline, Bookmarks shows
+	// user-added entries. (When the panel is hidden the filter is irrelevant.)
+	mode := bp.viewer.panelMode
+	for _, bookmark := range sorted {
+		switch mode {
+		case PanelTOC:
+			if bookmark.IsUserAdded {
+				continue
+			}
+		case PanelBookmarks:
+			if !bookmark.IsUserAdded {
+				continue
+			}
+		}
+		id := fmt.Sprintf("%p", bookmark) // stable per-entry id (pointer identity)
 		bp.treeData[id] = bookmark
 		bp.rootIDs = append(bp.rootIDs, id)
 	}
 }
 
-// OnBookmarkSelected is called when a bookmark is selected
+// OnBookmarkSelected is called when an entry is selected: remember it (by pointer, so it
+// stays valid across tree rebuilds) and jump to its page/position.
 func (bp *BookmarkPanel) OnBookmarkSelected(uid string) {
 	bookmark, exists := bp.treeData[uid]
 	if !exists {
 		return
 	}
-
-	// Jump to the bookmarked page and position
+	bp.selected = bookmark
 	bp.viewer.JumpToPageAndPosition(bookmark.PageNo, bookmark.YOffset)
 }
 
-// showAddBookmarkDialog shows dialog to add a new bookmark
-func (bp *BookmarkPanel) showAddBookmarkDialog() {
+// showAddDialog adds a new entry. toTOC=true adds a Table-of-Contents entry (page-level);
+// otherwise a user Bookmark (with an optional region position).
+func (bp *BookmarkPanel) showAddDialog(toTOC bool) {
 	if bp.viewer.pdfPath == "" {
 		dialog.ShowInformation("No PDF", "Please open a PDF first", bp.viewer.window)
 		return
 	}
 
-	titleEntry := widget.NewEntry()
-	titleEntry.SetPlaceHolder("Bookmark title")
-
-	// Get current scroll position
-	currentYOffset := bp.viewer.GetScrollYOffset()
-	
-	// Radio buttons for bookmark type
-	typeRadio := widget.NewRadioGroup([]string{
-		"Page bookmark (jump to top of page)",
-		"Region bookmark (jump to current position)",
-	}, nil)
-	
-	// Default to region if scrolled down, otherwise page
-	if currentYOffset > 10 {
-		typeRadio.SetSelected("Region bookmark (jump to current position)")
-	} else {
-		typeRadio.SetSelected("Page bookmark (jump to top of page)")
+	kind := "Bookmark"
+	dlgTitle := "Add Bookmark"
+	if toTOC {
+		kind = "TOC entry"
+		dlgTitle = "Add to Table of Contents"
 	}
+
+	titleEntry := widget.NewEntry()
+	titleEntry.SetPlaceHolder(kind + " title")
 
 	pageEntry := widget.NewEntry()
 	pageEntry.SetText(strconv.Itoa(bp.viewer.currentPage))
 	pageEntry.SetPlaceHolder("Page number")
 
 	form := container.NewVBox(
-		widget.NewLabel("Add Bookmark"),
 		widget.NewForm(
 			widget.NewFormItem("Title:", titleEntry),
 			widget.NewFormItem("Page:", pageEntry),
 		),
-		typeRadio,
 	)
 
-	d := dialog.NewCustomConfirm("Add Bookmark", "Add", "Cancel", form, func(ok bool) {
+	// Region (current scroll position) is offered for bookmarks only; TOC entries are
+	// page-level, like a normal document outline.
+	currentFrac := bp.viewer.GetScrollFraction()
+	var typeRadio *widget.RadioGroup
+	if !toTOC {
+		typeRadio = widget.NewRadioGroup([]string{
+			"Page bookmark (jump to top of page)",
+			"Region bookmark (jump to current position)",
+		}, nil)
+		if currentFrac > 0.01 {
+			typeRadio.SetSelected("Region bookmark (jump to current position)")
+		} else {
+			typeRadio.SetSelected("Page bookmark (jump to top of page)")
+		}
+		form.Add(typeRadio)
+	}
+
+	d := dialog.NewCustomConfirm(dlgTitle, "Add", "Cancel", form, func(ok bool) {
 		if !ok {
 			return
 		}
@@ -229,27 +317,32 @@ func (bp *BookmarkPanel) showAddBookmarkDialog() {
 			return
 		}
 
-		// Determine Y offset based on selection
 		var yOffset float32
-		if typeRadio.Selected == "Region bookmark (jump to current position)" {
-			yOffset = currentYOffset
+		if typeRadio != nil && typeRadio.Selected == "Region bookmark (jump to current position)" {
+			yOffset = currentFrac
+		}
+
+		// userAdded=false for a TOC entry (📖), true for a bookmark (🔖/📍).
+		bp.bookmarkManager.AddBookmark(title, pageNo, yOffset, !toTOC)
+
+		// Show the new entry in its matching view.
+		if toTOC {
+			bp.viewer.SetPanelMode(PanelTOC)
 		} else {
-			yOffset = 0 // Page bookmark
+			bp.viewer.SetPanelMode(PanelBookmarks)
 		}
 
-		bp.bookmarkManager.AddBookmark(title, pageNo, yOffset)
-		bp.rebuildTreeData()
-		bp.tree.Refresh()
-
-		bookmarkType := "Bookmark"
-		if yOffset > 0 {
-			bookmarkType = "Region bookmark"
+		label := kind
+		if !toTOC && yOffset > 0 {
+			label = "Region bookmark"
 		}
-		dialog.ShowInformation("Success", fmt.Sprintf("%s '%s' added", bookmarkType, title), bp.viewer.window)
+		bp.showTransientInfo("Success", fmt.Sprintf("%s '%s' added", label, title))
 	}, bp.viewer.window)
 
-	d.Resize(fyne.NewSize(450, 250))
+	d.Resize(fyne.NewSize(460, 250))
 	d.Show()
+	// Put the cursor in the title field so the user can type immediately.
+	bp.viewer.window.Canvas().Focus(titleEntry)
 }
 
 // showSaveBookmarksDialog shows dialog to save bookmarks to PDF
@@ -259,66 +352,115 @@ func (bp *BookmarkPanel) showSaveBookmarksDialog() {
 		return
 	}
 
-	if !bp.bookmarkManager.HasBookmarks() {
-		dialog.ShowInformation("No Bookmarks", "Add some bookmarks first", bp.viewer.window)
-		return
+	// Note: an empty list is allowed — saving then strips the outline (cleanup).
+	empty := !bp.bookmarkManager.HasBookmarks()
+
+	// Let the user choose between a new file or overwriting the original. pdfcpu writes to
+	// a temp file and atomically renames when out == in, so overwriting is safe.
+	const optNew = "Save as a new file (…-bookmarked.pdf)"
+	const optOverwrite = "Overwrite the original file"
+	choice := widget.NewRadioGroup([]string{optNew, optOverwrite}, nil)
+	choice.SetSelected(optNew)
+
+	headline := "Save bookmarks & TOC to:"
+	if empty {
+		headline = "No entries — this will REMOVE all bookmarks/TOC from the file. Save to:"
 	}
+	content := container.NewVBox(
+		widget.NewLabel(headline),
+		choice,
+	)
 
-	dialog.ShowConfirm("Save Bookmarks", 
-		"This will save bookmarks to a new PDF file.\nOriginal file will not be modified.",
-		func(ok bool) {
-			if !ok {
-				return
-			}
+	d := dialog.NewCustomConfirm("Save to PDF", "Save", "Cancel", content, func(ok bool) {
+		if !ok {
+			return
+		}
 
-			// Create output filename
-			outputPath := bp.viewer.pdfPath + "-bookmarked.pdf"
+		overwrite := choice.Selected == optOverwrite
+		outputPath := bp.viewer.pdfPath + "-bookmarked.pdf"
+		if overwrite {
+			outputPath = bp.viewer.pdfPath
+		}
 
-			err := bp.bookmarkManager.SaveBookmarks(outputPath)
-			if err != nil {
-				dialog.ShowError(fmt.Errorf("Failed to save: %v", err), bp.viewer.window)
-				return
-			}
+		if err := bp.bookmarkManager.SaveBookmarks(outputPath); err != nil {
+			dialog.ShowError(fmt.Errorf("Failed to save: %v", err), bp.viewer.window)
+			return
+		}
 
-			dialog.ShowInformation("Success", 
-				fmt.Sprintf("Bookmarks saved to:\n%s", outputPath), 
-				bp.viewer.window)
-		}, bp.viewer.window)
+		verb := "Saved to"
+		if empty {
+			verb = "Removed all entries; saved to"
+		}
+		if overwrite {
+			bp.showTransientInfo("Success", fmt.Sprintf("%s the original file:\n%s", verb, outputPath))
+		} else {
+			bp.showTransientInfo("Success", fmt.Sprintf("%s:\n%s", verb, outputPath))
+		}
+	}, bp.viewer.window)
+
+	d.Resize(fyne.NewSize(460, 220))
+	d.Show()
 }
 
-// selectedBookmarkUID stores the last selected bookmark UID
-var selectedBookmarkUID string
+// showTransientInfo shows a confirmation dialog that auto-dismisses after 3s, so the user
+// needn't click OK (they can still click it to close sooner). fyne.Do marshals the Hide
+// back onto the UI thread (Fyne >= 2.6).
+func (bp *BookmarkPanel) showTransientInfo(title, msg string) {
+	d := dialog.NewInformation(title, msg, bp.viewer.window)
+	d.Show()
+	time.AfterFunc(2*time.Second, func() {
+		fyne.Do(d.Hide)
+	})
+}
 
-// deleteSelectedBookmark deletes the currently selected bookmark
+// deleteSelectedBookmark deletes the currently selected entry.
 func (bp *BookmarkPanel) deleteSelectedBookmark() {
-	if selectedBookmarkUID == "" {
-		dialog.ShowInformation("No Selection", "Please select a bookmark to delete", bp.viewer.window)
+	bookmark := bp.selected
+	if bookmark == nil {
+		dialog.ShowInformation("No Selection", "Please select an entry to delete", bp.viewer.window)
 		return
 	}
 
-	bookmark, exists := bp.treeData[selectedBookmarkUID]
-	if !exists {
-		dialog.ShowError(fmt.Errorf("bookmark not found"), bp.viewer.window)
-		return
-	}
-
-	// Confirm deletion
-	dialog.ShowConfirm("Delete Bookmark", 
-		fmt.Sprintf("Delete bookmark '%s'?", bookmark.Title),
+	dialog.ShowConfirm("Delete",
+		fmt.Sprintf("Delete '%s'?", bookmark.Title),
 		func(ok bool) {
 			if !ok {
 				return
 			}
 
 			if bp.bookmarkManager.DeleteBookmark(bookmark) {
+				bp.selected = nil
+				bp.tree.UnselectAll()
 				bp.rebuildTreeData()
 				bp.tree.Refresh()
-				selectedBookmarkUID = ""
-				dialog.ShowInformation("Success", "Bookmark deleted", bp.viewer.window)
+				// Auto-dismissing confirmation (no click needed).
+				bp.showTransientInfo("Deleted", fmt.Sprintf("Deleted '%s'", bookmark.Title))
 			} else {
-				dialog.ShowError(fmt.Errorf("failed to delete bookmark"), bp.viewer.window)
+				dialog.ShowError(fmt.Errorf("failed to delete entry"), bp.viewer.window)
 			}
 		}, bp.viewer.window)
+}
+
+// deleteAll removes every entry in the current view (TOC entries in TOC mode, bookmarks
+// otherwise), after a confirmation.
+func (bp *BookmarkPanel) deleteAll() {
+	userAdded := bp.viewer.panelMode != PanelTOC
+	what := "bookmarks"
+	if !userAdded {
+		what = "table-of-contents entries"
+	}
+
+	dialog.ShowConfirm("Delete All", fmt.Sprintf("Delete ALL %s?", what), func(ok bool) {
+		if !ok {
+			return
+		}
+		n := bp.bookmarkManager.DeleteByType(userAdded)
+		bp.selected = nil
+		bp.tree.UnselectAll()
+		bp.rebuildTreeData()
+		bp.tree.Refresh()
+		bp.showTransientInfo("Deleted", fmt.Sprintf("Deleted %d %s", n, what))
+	}, bp.viewer.window)
 }
 
 // GetContainer returns the bookmark panel container

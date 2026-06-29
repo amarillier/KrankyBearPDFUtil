@@ -1,8 +1,10 @@
-# KrankyBear PDF Utility - CLI & GUI
+# KrankyBear PDF Utility - CLI, GUI & Viewer
 
 ![KrankyBearBeret](https://github.com/user-attachments/assets/95aef02f-a72c-4b82-aad2-5d2e4b30315a)
 
-A powerful, easy-to-use PDF management tool available in both **command-line (pdfutil)** and **graphical (pdfgui)** versions. Built with [pdfcpu](https://github.com/pdfcpu/pdfcpu) by Horst H Rutter and [Fyne](https://fyne.io) for the GUI.
+A powerful, easy-to-use PDF toolkit in three flavours: a **command-line tool (pdfutil)**, a **graphical app (pdfgui)**, and a **lightweight page viewer (pdfviewer)**. Built with [pdfcpu](https://github.com/pdfcpu/pdfcpu) by Horst H Rutter, [MuPDF](https://mupdf.com/) (via [go-fitz](https://github.com/gen2brain/go-fitz)) for high-quality page rendering, and [Fyne](https://fyne.io) for the GUIs.
+
+The three ship together: a single installer per OS puts all of them in place, and pdfgui can launch pdfviewer (or your system default viewer) to preview a file.
 
 ---
 
@@ -25,7 +27,7 @@ A powerful, easy-to-use PDF management tool available in both **command-line (pd
 - 💾 In-place editing by default
 - 🔄 Professional Help & About dialogs
 
-→ **[GUI Documentation](gui/README.md)**
+→ **[GUI Documentation](pdfgui/README.md)**
 
 ### 💻 **CLI Version (pdfutil)**
 **Perfect for:**
@@ -42,15 +44,35 @@ A powerful, easy-to-use PDF management tool available in both **command-line (pd
 - 🎯 Simple command structure
 - 🔗 Shell aliases support
 
+### 👁️ **Viewer (pdfviewer)**
+A deliberately minimalist, fast page viewer for reading PDFs (rendered with MuPDF). Launchable on its own, or from pdfgui's **View** button.
+
+**Perfect for:**
+- Quick reading without a heavyweight app
+- Navigating long documents (keyboard, continuous scroll)
+- Building or browsing a document's outline / personal bookmarks
+
+**Highlights:**
+- 📖🔖 **Table of Contents vs Bookmarks, clearly distinguished** — a genuinely unique touch: 📖 = the document's own outline (TOC), 🔖 = your page bookmarks, 📍 = a saved position on a page. An in-panel switch flips between them, and the **Add** button / shortcuts adapt to whichever you're viewing.
+- 🏷️ **Bookmarks survive a round-trip** — saved into the standard PDF outline (portable to Preview/Acrobat/Foxit) with a small marker so they reload *as bookmarks*, not collapsed into the TOC — no sidecar file needed.
+- ⌨️ **Keyboard-first** — PgUp/PgDn/←/→/Home/End to navigate; Cmd/Ctrl+D add a bookmark, Cmd/Ctrl+T add a TOC entry
+- 🧭 **Continuous scroll** (lazy-rendered) or single-page; **Fit Width / Fit Page / 50–300%** zoom
+- 💾 **Save options** — new file or overwrite original; "Delete All" / save-empty to strip an outline for cleanup
+- 🕘 **Open Recent** (last 10) · 🖼️ drag-and-drop to open · 🎨 themes · system tray
+- 🧠 Remembers your window size, zoom, panel mode, and continuous-scroll choice
+
+→ **[Viewer Documentation](pdfviewer/README.md)**
+
 ---
 
-## Highlights - Both Versions
+## Highlights - All Three
 
-- **🔐 Encryption & Security** - Protect PDFs with passwords and granular permissions
-- **📑 Page Manipulation** - Extract, remove, split, rotate, reverse, and merge pages
+- **🔐 Encryption & Security** - Protect PDFs with passwords and granular permissions (pdfutil/pdfgui)
+- **📑 Page Manipulation** - Extract, remove, split, rotate, reverse, and merge pages (pdfutil/pdfgui)
 - **🔒 Permission Control** - Set precise access restrictions (print, modify, extract, forms, etc.)
 - **📊 PDF Analysis** - View detailed metadata and permission breakdowns
-- **⚡ Simple & Intuitive** - Straightforward interface (GUI or CLI)
+- **👁️ Reading & Outlines** - Minimalist viewer with high-quality rendering, continuous scroll, and a unique TOC-vs-bookmarks distinction (pdfviewer)
+- **⚡ Simple & Intuitive** - Straightforward interface (GUI, CLI, or viewer)
 - **🆓 100% Free** - Open source, no restrictions
 - **🌍 Cross-Platform** - Windows, macOS, Linux
 
@@ -136,7 +158,7 @@ pdfgui.exe
 - Edit operations auto-populate with current values
 - Use system tray for quick access (right-click icon)
 
-→ **[Full GUI Documentation](gui/README.md)**
+→ **[Full GUI Documentation](pdfgui/README.md)**
 
 ---
 
@@ -690,7 +712,8 @@ Right-click the tray icon for:
 ## Documentation
 
 - **[BUILD-SYSTEM-GUIDE.md](BUILD-SYSTEM-GUIDE.md)** - Complete build system documentation
-- **[gui/README.md](gui/README.md)** - GUI-specific documentation
+- **[pdfgui/README.md](pdfgui/README.md)** - GUI-specific documentation
+- **[pdfviewer/README.md](pdfviewer/README.md)** - Viewer-specific documentation
 - **[ReleaseNotes.txt](ReleaseNotes.txt)** - Version history
 
 ---
